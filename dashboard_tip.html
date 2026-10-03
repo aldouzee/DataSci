@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Models</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Teko:wght@500;600&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+
+<style>
+  /* Colors & fonts (change here) */
+  :root {
+    --yellow: #ffcc00;
+    --black:  #000;
+    --grey:   #5a5a5a;
+    --line:   #dedede;
+    --body:   'Montserrat', system-ui, sans-serif;
+    --title:  'Teko', 'Arial Narrow', sans-serif;
+    --mono:   'Fira Code', Consolas, monospace;
+  }
+
+  /* Base */
+  * { box-sizing: border-box; }
+  body { margin: 0; display: flex; min-height: 100vh; font: 14px/1.45 var(--body); color: var(--black); background: #fff; }
+  button { font: inherit; cursor: pointer; }
+  h1 { margin: 0; font-size: 44px; font-weight: 800; line-height: 1; }
+  h3 { margin: 28px 0 12px; font-weight: 800; }
+  .muted { color: var(--grey); }
+
+  /* Main + yellow header */
+  main { flex: 1; min-width: 0; padding-bottom: 40px; }
+  .page { padding: 0 36px; }
+  header { background: var(--yellow); padding: 0 36px 28px; }
+  .bar-top { display: flex; align-items: center; gap: 8px; height: 56px; }
+  .title-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+
+  /* Buttons */
+  .btn { background: var(--black); color: var(--yellow); border: 2px solid var(--black); border-radius: 6px;
+         padding: 8px 14px; font-weight: 700; text-transform: uppercase; }
+  .tag { background: var(--black); color: var(--yellow); border-radius: 99px; padding: 4px 12px; font-size: 12px; font-weight: 600; }
+
+  /* Cards */
+  .card, .mc { background: #fff; border: 2px solid var(--black); border-radius: 6px; padding: 20px; }
+  .card h4 { margin: 0 0 12px; font: 600 24px/1 var(--title); text-transform: uppercase; }
+  .row-head { display: flex; justify-content: space-between; align-items: flex-start; }
+
+  .models { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .mc { text-align: left; color: inherit; }
+  .mc.on { border-width: 3px; box-shadow: 0 0 0 3px var(--yellow); }
+  .mc b { display: block; font: 600 24px/1 var(--title); text-transform: uppercase; }
+  .empty { grid-column: 1 / -1; border: 1.5px dashed #bdbdbd; border-radius: 8px; padding: 22px; text-align: center; color: var(--grey); }
+
+  .selected { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin: 30px 0 16px; }
+  .selected h2 { margin: 2px 0; font-size: 30px; font-weight: 800; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+  .kpi-value { font: 600 46px/1 var(--title); margin: 8px 0 4px; }
+  .kpi-value em { font: 700 11px var(--body); color: #14753f; background: #e3f5ea; padding: 2px 6px; border-radius: 5px; margin-left: 6px; vertical-align: middle; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+
+  /* visualization image */
+  #viz { min-height: 260px; display: grid; place-items: center; border: 1.5px dashed #bdbdbd; border-radius: 8px; color: var(--grey); overflow: hidden; }
+  #viz img { width: 100%; display: block; }
+
+  /* code */
+  #code { height: 270px; overflow: auto; background: #f6f6f6; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 0; font: 12px/1.7 var(--mono); }
+  #code div { display: flex; white-space: pre; }
+  #code i { width: 38px; padding-right: 12px; text-align: right; color: #a0a0a0; font-style: normal; flex: none; }
+  #code:empty::before { content: 'No code'; padding: 0 16px; color: #8a8a8a; }
+
+  /* feature bars + detail rows */
+  .feat { display: grid; grid-template-columns: 130px 1fr 40px; gap: 12px; align-items: center; padding: 9px 0; }
+  .track { height: 8px; background: #ececec; border-radius: 9px; overflow: hidden; }
+  .fill  { height: 100%; background: var(--yellow); box-shadow: inset 0 0 0 1px var(--black); border-radius: 9px; }
+  .detail { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .detail:last-child { border: 0; }
+  #feat:empty::before, #det:empty::before { content: 'No data'; color: var(--grey); }
+
+  /* copy message */
+  #toast { position: fixed; right: 20px; bottom: 20px; background: var(--black); color: var(--yellow); padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .25s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+
+  /* hide anything left empty */
+  #tag:empty, #foot:empty { display: none; }
+
+  /* Small screens */
+  @media (max-width: 900px) {
+    .page, header { padding-left: 18px; padding-right: 18px; }
+    .grid { grid-template-columns: 1fr; }
+    h1 { font-size: 36px; }
+  }
+
+  /* PDF export */
+  @media print {
+    @page { margin: 14mm; }
+    .bar-top, #exp, #copy, #toast { display: none; }
+    body { display: block; }
+    .card, .mc { break-inside: avoid; }
+    #code { height: auto; overflow: visible; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+
+<body>
+<main>
+  <header>
+    <div class="bar-top">
+      <span class="muted">Workspace /</span><b>Models</b>
+    </div>
+    <div class="title-row">
+      <div><h1>Models</h1><p id="pagesub" class="muted" style="margin:8px 0 0"></p></div>
+      <button class="btn" id="exp">Export report</button>
+    </div>
+  </header>
+
+  <div class="page">
+    <h3>All models <span id="count" class="muted"></span></h3>
+    <div class="models" id="cards"></div>
+
+    <div class="selected">
+      <div>
+        <div id="kind" class="muted"></div>
+        <h2 id="name"></h2>
+        <div id="desc" class="muted"></div>
+        <div id="file" class="muted" style="font-size:12px;margin-top:6px"></div>
+      </div>
+      <span class="tag" id="tag"></span>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="grid">
+      <div class="card">
+        <h4>Visualization</h4>
+        <div id="viz"></div>
+        <div class="muted" style="font-size:12px;margin-top:10px"><span id="caption"></span> <span id="points"></span></div>
+      </div>
+      <div class="card">
+        <div class="row-head"><h4>Code</h4><button class="btn" id="copy" style="padding:4px 12px">Copy</button></div>
+        <div id="code" tabindex="0"></div>
+      </div>
+      <div class="card"><h4>Feature importance</h4><div id="feat"></div></div>
+      <div class="card"><h4>Details</h4><div id="det"></div></div>
+    </div>
+
+    <p id="foot" class="muted" style="margin-top:26px;font-size:12px"></p>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script>
+/* DATA HERE */
+const DATA = {
+  pageSubtitle: '',
+  footer: '',
+  badge: '',                    
+
+  models: [
+    {
+      name: 'My Model', type: 'Classification',
+      description: '', file: 'data.csv',
+      kpis: [ { label: 'Accuracy', value: 'trash%', delta: 'trash%', note: 'vs. last run' } ],  // up to 4
+      image: 'skibidi.png',        // image path, URL, or base64
+      caption: '', points: '',
+      code: 'print("hello")',
+      features: [ { label: 'Edge', value: 67 } ],   // value 0-100
+      details:  [ { label: 'Epochs', value: '67' } ]
+    }
+  ]
+};
+
+/* App code */
+let current = 0;
+const $ = id => document.getElementById(id);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+function render() {
+  const d = DATA, m = d.models[current] || {};
+
+  // header info
+  $('pagesub').textContent = d.pageSubtitle;
+  $('foot').textContent = d.footer;
+  $('tag').textContent = d.badge;
+  $('count').textContent = d.models.length ? String(d.models.length).padStart(2, '0') : '';
+
+  // model cards
+  $('cards').innerHTML = d.models.length
+    ? d.models.map((x, i) => `<button class="mc ${i === current ? 'on' : ''}" data-i="${i}"><b>${esc(x.name)}</b><span class="muted">${esc(x.type)}</span></button>`).join('')
+    : '<div class="empty">No models yet</div>';
+  document.querySelectorAll('[data-i]').forEach(el => el.onclick = () => { current = +el.dataset.i; render(); });
+
+  // selected model
+  $('kind').textContent = m.type || '';
+  $('name').textContent = m.name || '';
+  $('desc').textContent = m.description || '';
+  $('file').textContent = m.file || '';
+
+  const k = m.kpis || [];
+  $('kpis').innerHTML = [0, 1, 2, 3].map(i => {
+    const x = k[i] || {};
+    return `<div class="card"><small class="muted">${esc(x.label) || '&nbsp;'}</small>
+            <div class="kpi-value">${esc(x.value) || '—'}${x.delta ? `<em>${esc(x.delta)}</em>` : ''}</div>
+            <small class="muted">${esc(x.note) || '&nbsp;'}</small></div>`;
+  }).join('');
+
+  $('viz').innerHTML = m.image ? `<img src="${esc(m.image)}" alt="${esc(m.caption) || 'Visualization'}">` : 'No image';
+  $('caption').textContent = m.caption || '';
+  $('points').textContent = m.points || '';
+
+  $('code').innerHTML = m.code
+    ? m.code.split('\n').map((line, i) => `<div><i>${i + 1}</i><span>${esc(line)}</span></div>`).join('') : '';
+
+  $('feat').innerHTML = (m.features || []).map(f =>
+    `<div class="feat"><span>${esc(f.label)}</span><div class="track"><div class="fill" style="width:${+f.value || 0}%"></div></div><b>${+f.value || 0}%</b></div>`).join('');
+  $('det').innerHTML = (m.details || []).map(x =>
+    `<div class="detail"><span class="muted">${esc(x.label)}</span><b>${esc(x.value)}</b></div>`).join('');
+}
+
+function toast(text) {
+  $('toast').textContent = text;
+  $('toast').classList.add('show');
+  setTimeout(() => $('toast').classList.remove('show'), 1800);
+}
+
+// Copy button
+$('copy').onclick = () => {
+  const code = (DATA.models[current] || {}).code;
+  if (!code) return toast('Nothing to copy');
+  navigator.clipboard.writeText(code).then(() => toast('Copied'), () => toast('Copy blocked'));
+};
+
+// "Save as PDF"
+$('exp').onclick = () => {
+  const old = document.title, m = DATA.models[current];
+  if (m && m.name) document.title = m.name + ' report';
+  window.print();
+  document.title = old;
+};
+
+render();
+</script>
+</body>
+</html>
